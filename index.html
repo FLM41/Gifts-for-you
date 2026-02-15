@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>A Small Reward</title>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        :root {
+            --primary-purple: #9d8df1;
+            --baby-blue: #bde0fe;
+            --dark-purple: #6a5acd;
+            --soft-purple-card: rgba(248, 245, 255, 0.95);
+        }
+
+        * { 
+            box-sizing: border-box; 
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
+            -webkit-tap-highlight-color: transparent; 
+        }
+
+        body {
+            background: linear-gradient(135deg, #f0f7ff 0%, #e8e0ff 50%, #f0f7ff 100%);
+            background-attachment: fixed;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+            position: relative;
+        }
+
+        body::before {
+            content: "";
+            position: absolute;
+            width: 300px; height: 300px;
+            background: radial-gradient(circle, rgba(189,224,254,0.4) 0%, rgba(189,224,254,0) 70%);
+            top: 10%; left: -50px;
+            z-index: -1;
+            animation: floatGlow 8s infinite ease-in-out;
+        }
+
+        body::after {
+            content: "";
+            position: absolute;
+            width: 400px; height: 400px;
+            background: radial-gradient(circle, rgba(157,141,241,0.3) 0%, rgba(157,141,241,0) 70%);
+            bottom: 5%; right: -100px;
+            z-index: -1;
+            animation: floatGlow 10s infinite ease-in-out reverse;
+        }
+
+        @keyframes floatGlow {
+            0%, 100% { transform: translate(0, 0); }
+            50% { transform: translate(30px, 40px); }
+        }
+
+        .falling-item { position: absolute; top: -150px; z-index: 1; animation: fallStraight linear forwards; }
+        .falling-item img { height: auto; mix-blend-mode: multiply; filter: contrast(1.1); width: 60px; }
+        
+        @keyframes fallStraight {
+            0% { transform: translateY(0); opacity: 0; }
+            10% { opacity: 1; }
+            100% { transform: translateY(115vh); opacity: 0; }
+        }
+
+        .container {
+            width: 90%;
+            max-width: 400px;
+            padding: 2.2rem 1.6rem;
+            background: var(--soft-purple-card);
+            backdrop-filter: blur(15px);
+            border-radius: 35px;
+            border: 4px solid white;
+            box-shadow: 0 15px 35px rgba(106, 90, 205, 0.15), 0 0 0 6px var(--baby-blue);
+            text-align: center;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            position: relative;
+            animation: mainFloat 4s ease-in-out infinite;
+        }
+
+        @keyframes mainFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+
+        .page { display: none; width: 100%; animation: fadeIn 0.4s ease-in-out; }
+        .page.active { display: block; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.98); } to { opacity: 1; transform: scale(1); } }
+
+        h1 { color: var(--dark-purple); font-size: 1.4rem; margin-bottom: 1rem; font-weight: 700; }
+        p { color: #444; font-size: 1rem; line-height: 1.6; margin-bottom: 15px; }
+
+        button {
+            background-color: var(--baby-blue);
+            color: var(--dark-purple);
+            border: none;
+            padding: 12px 26px;
+            border-radius: 20px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 4px 0px #97c8f0;
+            margin-top: 5px;
+            transition: 0.2s;
+        }
+
+        button:active { transform: translateY(2px); box-shadow: 0 2px 0px #97c8f0; }
+
+        .reward-card {
+            background: white;
+            padding: 16px;
+            border-radius: 18px;
+            cursor: pointer;
+            border: 2px dashed var(--baby-blue);
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: var(--dark-purple);
+            transition: 0.3s;
+            position: relative;
+        }
+
+        .reward-card:hover { border-style: solid; background: #fdfbff; transform: scale(1.02); }
+
+        .game-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            margin-top: 15px;
+        }
+
+        .memory-card {
+            aspect-ratio: 1/1;
+            background: var(--primary-purple);
+            border-radius: 10px;
+            cursor: pointer;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.4s;
+        }
+
+        .memory-card.flipped { transform: rotateY(180deg); }
+        .card-front, .card-back {
+            position: absolute;
+            width: 100%; height: 100%;
+            backface-visibility: hidden;
+            border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .card-back { background: var(--primary-purple); }
+        .card-front { background: white; transform: rotateY(180deg); border: 1.5px solid var(--baby-blue); }
+        .card-front img { width: 85%; height: auto; }
+
+        #secret-chibi {
+            position: fixed;
+            bottom: 25px; right: 25px;
+            width: 40px; height: 40px;
+            opacity: 0.2;
+            cursor: pointer;
+            z-index: 1000;
+        }
+
+        .custom-popup {
+            position: fixed;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            background: white;
+            padding: 25px;
+            border-radius: 25px;
+            border: 5px solid var(--primary-purple);
+            z-index: 2000;
+            transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            text-align: center;
+            width: 85%; max-width: 320px;
+        }
+        .custom-popup.show { transform: translate(-50%, -50%) scale(1); }
+        #levi-cheer-gif { width: 100%; border-radius: 15px; margin: 10px 0; display: none; }
+
+        #music-toggle {
+            position: fixed;
+            top: 20px; right: 20px;
+            z-index: 1000;
+            background: rgba(255,255,255,0.8);
+            border: 1.5px solid var(--primary-purple);
+            border-radius: 50%;
+            width: 38px; height: 38px;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer;
+            font-size: 1.1rem;
+        }
+
+        .reveal-text {
+            display: none;
+            color: #2e7d32;
+            font-size: 0.85rem;
+            margin-top: 8px;
+            animation: fadeIn 0.3s;
+        }
+    </style>
+</head>
+<body>
+
+    <audio id="bg-audio" loop>
+        <source src="https://files.catbox.moe/kixh2o.mp3" type="audio/mpeg">
+    </audio>
+
+    <div id="music-toggle" onclick="toggleMusic()">🔇</div>
+    <div id="decoration-layer"></div>
+
+    <img id="secret-chibi" src="https://i.pinimg.com/736x/cb/d5/49/cbd549469f159aa15d437b099bedd171.jpg" onclick="showSecretMsg()">
+
+    <div id="main-popup" class="custom-popup">
+        <h2 id="popup-title" style="margin:0; font-size:1.2rem;"></h2>
+        <img id="levi-cheer-gif" src="https://i.pinimg.com/originals/6a/c6/83/6ac683927128477c80173aefd26c8560.gif">
+        <p id="popup-text" style="margin:10px 0; font-size:0.95rem;"></p>
+        <button id="popup-btn" onclick="closePopup()">Okay!</button>
+    </div>
+
+    <div class="container">
+        <div id="page1" class="page active">
+            <h1>A small reward, just because</h1>
+            <p>You earned this 😄</p>
+            <button onclick="startExperience()">Proceed carefully 😌</button>
+        </div>
+
+        <div id="page2" class="page">
+            <p>You’ve been doing a lot lately.</p>
+            <p>Even while tired. That’s impressive.</p>
+            <button onclick="triggerConfettiPage()">Next!</button>
+        </div>
+
+        <div id="page3" class="page">
+            <h1>Surprise!! 🎉</h1>
+            <p>So i thought you deserved a small reward 😄</p>
+            <button onclick="nextPage(4)">Show me! ✨</button>
+        </div>
+
+        <div id="page4" class="page">
+            <h1>Pick a reward 👇</h1>
+            <p style="font-size: 0.8rem; opacity: 0.7;">(You can check them all out!)</p>
+            <div id="rewards-list">
+                <div class="reward-card" onclick="revealReward(this, 'A small drawing made just for you 🎨')">
+                    🎁 Gift 1
+                    <div class="reveal-text">A small drawing made just for you 🎨</div>
+                </div>
+                <div class="reward-card" onclick="revealReward(this, 'A Discord decoration bundle ✨')">
+                    🎁 Gift 2
+                    <div class="reveal-text">A Discord decoration bundle ✨</div>
+                </div>
+                <div id="gift3-btn" class="reward-card" onclick="startMemoryGame()">🎁 Gift 3 (Game)</div>
+            </div>
+            <div id="final-note" style="display:none; font-weight:bold; color:var(--dark-purple); margin-top:15px; font-size:0.95rem; line-height: 1.4;">
+                Nice! Now don't be shy to receive your gift, just message me! 😄
+            </div>
+        </div>
+
+        <div id="page5" class="page">
+            <p style="font-size: 0.8rem; margin-bottom: 5px;">Just for fun 😄 Here’s a tiny game!</p>
+            <div class="game-grid" id="game-grid"></div>
+        </div>
+    </div>
+
+    <script>
+        // Restored full list of chibis
+        const chibis = [
+            'https://i.redd.it/chibi-blue-lock-characters-background-removed-v0-dqghxb7vqez81.png?width=1890&format=png&auto=webp&s=488f95367c4c84281692f6c07d5e98327464ec7e',
+            'https://i.redd.it/chibi-blue-lock-characters-background-removed-v0-wc1vtk3uqez81.png?width=1890&format=png&auto=webp&s=0f853486e1efe3d63c850f2da9ef947e55b218ad',
+            'https://i.redd.it/chibi-blue-lock-characters-background-removed-v0-f73u8ky2rez81.png?width=1890&format=png&auto=webp&s=351e978980c54c2a1dfcf3a316d58385c8ec1f0a',
+            'https://i.pinimg.com/474x/f8/f5/43/f8f54327f58ebbb8a3a9b76a50acba11.jpg',
+            'https://static.wikia.nocookie.net/shingekinokyojin/images/1/1e/Mikasa_Ackermann_%28Chibi_Theater%29_character_image.png/revision/latest?cb=20170419170202',
+            'https://i.pinimg.com/736x/25/2e/33/252e332268cea082e9b8e28018faca88.jpg',
+            'https://i.pinimg.com/564x/15/aa/b3/15aab3d6f19c656865984a62e88de22f.jpg',
+            'https://i.pinimg.com/736x/b6/dd/1a/b6dd1a749156ff856db1296d0dbc56d4.jpg',
+            'https://i.pinimg.com/736x/9a/f0/a7/9af0a768ebdc4d470ad6e013bbbd4fbf.jpg',
+            'https://i.pinimg.com/564x/c8/9d/08/c89d0839404df10690d92514b9cebb9f.jpg',
+            'https://i.pinimg.com/736x/a6/86/7d/a6867dc6e2b169c41a5dda8e9d3cb7c2.jpg',
+            'https://i.pinimg.com/736x/da/47/cc/da47ccfdeb8cd383e475046a39449806.jpg',
+            'https://i.pinimg.com/736x/f1/e7/df/f1e7df0f906e96e1b9c4e48c93d88367.jpg',
+            'https://i.pinimg.com/736x/f2/ee/f9/f2eef91758270f36250bdf98f8eda044.jpg',
+            'https://i.pinimg.com/736x/22/c6/cd/22c6cd5754b53c5e8a4abb0034ddb060.jpg',
+            'https://i.pinimg.com/564x/35/47/90/35479056744b0ad87f55bfd3a88fa7e9.jpg',
+            'https://i.pinimg.com/736x/cb/d5/49/cbd549469f159aa15d437b099bedd171.jpg',
+            'https://i.pinimg.com/736x/5b/9d/ee/5b9dee0ef64d2d72e2b42bc0eb2d2f39.jpg',
+            'https://i.pinimg.com/564x/6d/83/8c/6d838c336597b1358c115c8479de1b26.jpg'
+        ];
+
+        const audio = document.getElementById('bg-audio');
+        audio.volume = 0.1; 
+        let hasSeenPopup = false;
+
+        function startExperience() {
+            audio.play().catch(e => console.log(e));
+            document.getElementById('music-toggle').innerText = "🔊";
+            nextPage(2);
+        }
+
+        function toggleMusic() {
+            if (audio.paused) { audio.play(); document.getElementById('music-toggle').innerText = "🔊"; }
+            else { audio.pause(); document.getElementById('music-toggle').innerText = "🔇"; }
+        }
+
+        function createFallingItem() {
+            const container = document.getElementById('decoration-layer');
+            const wrapper = document.createElement('div');
+            wrapper.className = 'falling-item';
+            wrapper.style.left = Math.random() * 90 + 'vw';
+            const img = document.createElement('img');
+            img.src = chibis[Math.floor(Math.random() * chibis.length)];
+            wrapper.appendChild(img);
+            wrapper.style.animationDuration = (Math.random() * 2 + 5) + 's';
+            container.appendChild(wrapper);
+            setTimeout(() => wrapper.remove(), 7000);
+        }
+        setInterval(createFallingItem, 1300);
+
+        function nextPage(pageNum) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.getElementById('page' + pageNum).classList.add('active');
+        }
+
+        function triggerConfettiPage() {
+            nextPage(3);
+            confetti({ particleCount: 80, spread: 60, origin: { y: 0.6 }, colors: ['#9d8df1', '#bde0fe'] });
+        }
+
+        let matches = 0;
+        function startMemoryGame() {
+            nextPage(5);
+            const grid = document.getElementById('game-grid');
+            grid.innerHTML = ''; matches = 0;
+            // Picking 8 unique chibis for the pairs
+            const selection = chibis.sort(() => 0.5 - Math.random()).slice(0, 8);
+            const gameIcons = [...selection, ...selection].sort(() => Math.random() - 0.5);
+            gameIcons.forEach(icon => {
+                const card = document.createElement('div');
+                card.className = 'memory-card';
+                card.innerHTML = `<div class="card-back"></div><div class="card-front"><img src="${icon}"></div>`;
+                card.dataset.icon = icon;
+                card.onclick = () => flipCard(card);
+                grid.appendChild(card);
+            });
+        }
+
+        let firstCard, secondCard, lockGrid = false;
+        function flipCard(card) {
+            if (lockGrid || card === firstCard || card.classList.contains('matched')) return;
+            card.classList.add('flipped');
+            if (!firstCard) { firstCard = card; return; }
+            secondCard = card; lockGrid = true;
+            if (firstCard.dataset.icon === secondCard.dataset.icon) {
+                firstCard.classList.add('matched'); secondCard.classList.add('matched');
+                matches++; if (matches === 8) setTimeout(showWinPopup, 800);
+                resetTurn();
+            } else {
+                setTimeout(() => { firstCard.classList.remove('flipped'); secondCard.classList.remove('flipped'); resetTurn(); }, 1000);
+            }
+        }
+        function resetTurn() { [firstCard, secondCard, lockGrid] = [null, null, false]; }
+
+        function showWinPopup() {
+            const pop = document.getElementById('main-popup');
+            document.getElementById('popup-title').innerText = "Congrats 😆 You did it!";
+            document.getElementById('popup-text').innerText = "You're actually pretty good at this!";
+            document.getElementById('levi-cheer-gif').style.display = "block";
+            document.getElementById('popup-btn').innerText = "Back to choices";
+            document.getElementById('popup-btn').onclick = () => {
+                pop.classList.remove('show');
+                nextPage(4);
+            };
+            pop.classList.add('show');
+            confetti({ particleCount: 150, colors: ['#9d8df1', '#bde0fe'] });
+        }
+
+        function revealReward(element, text) {
+            const innerText = element.querySelector('.reveal-text');
+            if (innerText.style.display === 'block') return;
+            
+            innerText.style.display = 'block';
+            element.style.borderStyle = 'solid';
+            element.style.borderColor = '#77dd77';
+            document.getElementById('final-note').style.display = 'block';
+
+            if (!hasSeenPopup) {
+                const pop = document.getElementById('main-popup');
+                document.getElementById('popup-title').innerText = "A Little Something 😏";
+                document.getElementById('popup-text').innerText = "Look at you, finding out what's inside! Now check the others if you want.";
+                document.getElementById('levi-cheer-gif').style.display = "none";
+                document.getElementById('popup-btn').onclick = () => pop.classList.remove('show');
+                pop.classList.add('show');
+                hasSeenPopup = true;
+            }
+            confetti({ particleCount: 40, colors: ['#9d8df1', '#bde0fe'], origin: { y: 0.8 } });
+        }
+
+        function showSecretMsg() {
+            const pop = document.getElementById('main-popup');
+            document.getElementById('popup-title').innerText = "Secret Found! 😆";
+            document.getElementById('levi-cheer-gif').style.display = "none";
+            document.getElementById('popup-text').innerText = "Hehe, you found me 😆, now dont forget to smile 😆";
+            document.getElementById('popup-btn').innerText = "I will! 😄";
+            document.getElementById('popup-btn').onclick = () => pop.classList.remove('show');
+            pop.classList.add('show');
+        }
+
+        function closePopup() { document.getElementById('main-popup').classList.remove('show'); }
+    </script>
+</body>
+</html>
